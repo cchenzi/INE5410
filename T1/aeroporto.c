@@ -1,5 +1,7 @@
 #include "aeroporto.h"
-
+#include "unistd.h"
+#include "stdlib.h"
+#include "stdio.h"
 /**
  * aeroporto.c
  * Implementação das funções do aeroporto.h
@@ -9,20 +11,18 @@
 aeroporto_t* iniciar_aeroporto (size_t* args, size_t n_args) {
 	aeroporto_t* aeroporto = (aeroporto_t*) malloc(sizeof(aeroporto_t));
 	// Variáveis discretas (inicio n_)
-	aeroporto->n_pistas = n_args[0];
-	aeroporto->n_portoes = n_args[1];
-	aeroporto->n_esteiras = n_args[2];
-	aeroporto->n_max_avioes_esteira = n_args[3];
+	aeroporto->n_pistas = args[0];
+	aeroporto->n_portoes = args[1];
+	aeroporto->n_esteiras = args[2];
+	aeroporto->n_max_avioes_esteira = args[3];
 	// Variáveis temporais (inicio t_)
-	aeroporto->t_pouso_decolagem = n_args[4];
-	aeroporto->t_remover_bagagens = n_args[5];
-	aeroporto->t_inserir_bagagens = n_args[6];
-	aeroporto->t_bagagens_esteira = n_args[7];
+	aeroporto->t_pouso_decolagem = args[4];
+	aeroporto->t_remover_bagagens = args[5];
+	aeroporto->t_inserir_bagagens = args[6];
+	aeroporto->t_bagagens_esteira = args[7];
 	// Semáforos
-	aeroporto->sem_esteiras = (aeroporto->esteiras*) malloc(sizeof(aeroporto->esteiras));
-	for (size_t i = 0; i < aeroporto->n_esteiras; i++) {
-		sem_init(&aeroporto->sem_esteiras[i], 0, aeroporto->n_max_avioes_esteira);
-	}
+	int aux = aeroporto->n_esteiras * aeroporto->n_max_avioes_esteira;
+	sem_init(&aeroporto->sem_esteiras, 0, aux);
 	sem_init(&aeroporto->sem_portoes, 0, aeroporto->n_portoes);
 	sem_init(&aeroporto->sem_pistas, 0, aeroporto->n_pistas);
 	// Filas
@@ -34,6 +34,7 @@ aeroporto_t* iniciar_aeroporto (size_t* args, size_t n_args) {
 
 void aproximacao_aeroporto (aeroporto_t* aeroporto, aviao_t* aviao) {
 	inserir(aeroporto->fila_pouso, aviao);
+	// printar
 }
 
 void pousar_aviao (aeroporto_t* aeroporto, aviao_t* aviao) {
@@ -58,39 +59,25 @@ void acoplar_portao (aeroporto_t* aeroporto, aviao_t* aviao) {
 }
 
 void transportar_bagagens (aeroporto_t* aeroporto, aviao_t* aviao) {
-	int i = -1;
-	int* valor_sem = 0;
-	do {
-		i++;
-		if (i == aeroporto->n_esteiras) {
-				i = 0;
-		}
-
-		sem_t aux_sem = aeroporto->sem_esteiras[i];
-		valor_sem = 0;
-		sem_getvalue(&aux_sem, valor_sem);
-	} while(!*valor_sem);
-
-	sem_wait(&sem_esteiras[i]);
 	sleep(aeroporto->t_remover_bagagens);
-
 	adicionar_bagagens_esteira(aeroporto, aviao);
-
 	sleep(aeroporto->t_inserir_bagagens);
-
-	inserir(aeroporto->fila_decolagem, aviao);
-	sem_post(&sem_esteiras[i]);
 }
 
 void adicionar_bagagens_esteira (aeroporto_t* aeroporto, aviao_t* aviao) {
+	sem_wait(&aeroporto->sem_esteiras);
+
 	sleep(aeroporto->t_bagagens_esteira);
 	remover(aeroporto->fila_bagagem);
+	inserir(aeroporto->fila_decolagem, aviao);
+
+	sem_post(&aeroporto->sem_esteiras);
 
 }
 
 void decolar_aviao (aeroporto_t* aeroporto, aviao_t* aviao) {
 	sem_wait(&aeroporto->sem_pistas);
-
+	/// sem_portoes?
 	remover(aeroporto->fila_decolagem);  // remove aviao da fila de decolagem
 	sleep(aeroporto->t_pouso_decolagem);
 
@@ -98,9 +85,12 @@ void decolar_aviao (aeroporto_t* aeroporto, aviao_t* aviao) {
 }
 
 int finalizar_aeroporto (aeroporto_t* aeroporto) {
-	for (size_t i = 0; i < aeroporto->n_esteiras; i++) {
-		free(aeroporto->esteiras[i]);
-	}
+	desaloca_fila(aeroporto->fila_pouso);
+	desaloca_fila(aeroporto->fila_bagagem);
+	desaloca_fila(aeroporto->fila_decolagem);
+	sem_destroy(&(aeroporto->sem_pistas));
+	sem_destroy(&(aeroporto->sem_portoes));
+	sem_destroy(&(aeroporto->sem_esteiras));
 	free(aeroporto);
 	return 1; // deveria ter um teste
 }

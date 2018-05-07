@@ -34,25 +34,29 @@ size_t n_elementos;
 */
 
 fila_ordenada_t * criar_fila () {
-  fila_ordenada_t fila = (fila_ordenada_t*) malloc(sizeof(fila_ordenada_t));
+  fila_ordenada_t *fila = (fila_ordenada_t*) malloc(sizeof(fila_ordenada_t)); // deveria ser isso*tamanho maximo da fila
   fila->primeiro = NULL;
   fila->ultimo = NULL;
   fila->n_elementos = 0;
+  pthread_mutex_init(&fila->mutex, NULL);
   return fila;
 }
 
 // Não se esqueca de desalocar todos os elementos antes de finalizar.
 void desaloca_fila (fila_ordenada_t * fila) {
-  elemento_t* aux_primeiro = fila->primeiro; // Primeiro elemento
-  for (int i = 0; i < fila->n_elementos; i++){
-    elemento_t* aux_proximo = aux_primeiro->proximo;  // auxiliar recebe primeiro+i
+  elemento_t *aux_primeiro = fila->primeiro; // Primeiro elemento
+  for (unsigned int i = 0; i < fila->n_elementos; i++){
+    elemento_t *aux_proximo = aux_primeiro->proximo;  // auxiliar recebe primeiro+i
     free(aux_primeiro);  // libera o primeiro atual
     aux_primeiro = aux_proximo; // passa o próximo para o primeiro
   }
+  pthread_mutex_destroy(&fila->mutex);
   free(fila);
 }
 
+  /// rever
 void inserir (fila_ordenada_t * fila, aviao_t * dado) {
+  pthread_mutex_lock(&fila->mutex);
   elemento_t* elemento = aloca_elemento(dado);
   if (fila->n_elementos == 0) {
     fila->primeiro = elemento;
@@ -67,18 +71,23 @@ void inserir (fila_ordenada_t * fila, aviao_t * dado) {
     fila->ultimo = elemento;
   }
   fila->n_elementos++;
+   pthread_mutex_unlock(&fila->mutex);
 }
 
 aviao_t * remover (fila_ordenada_t * fila) {
+  pthread_mutex_lock(&fila->mutex);
   if (fila->n_elementos == 0){
-    printf("Impossível!"); // era para ser uma exceção
+    //printf("Impossível!"); // era para ser uma exceção
+    pthread_mutex_unlock(&fila->mutex);
     return NULL;
   }
-  aviao_t dado = fila->primeiro->dado;
+  aviao_t *dado = fila->primeiro->dado;
   elemento_t* novo_primeiro = fila->primeiro->proximo;  // receberá o segundo elemento(primeiro+1)
   novo_primeiro->anterior = NULL;  // NULL no segundo, porque ele será o primeiro
   free(fila->primeiro);
   fila->primeiro = novo_primeiro;
   fila->n_elementos--;
+  pthread_mutex_unlock(&fila->mutex);
   return dado;
+
 }

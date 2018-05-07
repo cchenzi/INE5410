@@ -2,6 +2,7 @@
 #define FILA_AVIAO_H
 
 #include "aviao.h"
+#include "stdlib.h"
 
 /**
  * Esta estrutura auxiliar deve facilitar a implementação da fila ordenada.
@@ -27,6 +28,7 @@ typedef struct {
   elemento_t * primeiro;
   elemento_t * ultimo;
   size_t n_elementos;
+  pthread_mutex_t mutex; //
 } fila_ordenada_t;
 
 // Alocacão dinâmica da fila ordenada de aviões

@@ -1,4 +1,5 @@
 #include "aviao.h"
+#include "stdlib.h"
 
 /**
  * aviao.c
@@ -24,5 +25,6 @@ aviao_t * aloca_aviao (size_t combustivel, size_t id) {
 }
 
 void desaloca_aviao(aviao_t* aviao) {
+  pthread_exit(&(aviao->thread)); // fim da thread do avião
   free(aviao);
 }
