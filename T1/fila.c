@@ -1,5 +1,5 @@
 #include "fila.h"
-
+#include <stdio.h>
 /**
 * fila.c
 * Implementação das funções da fila.h
@@ -15,8 +15,6 @@ aviao_t * dado;
 
 elemento_t * aloca_elemento (aviao_t * dado) {
   elemento_t* elemento = (elemento_t*) malloc(sizeof(elemento_t));
-  elemento->anterior = NULL;
-  elemento->proximo = NULL;
   elemento->dado = dado;
   return elemento;
 }
@@ -34,10 +32,11 @@ size_t n_elementos;
 */
 
 fila_ordenada_t * criar_fila () {
-  fila_ordenada_t *fila = (fila_ordenada_t*) malloc(sizeof(fila_ordenada_t)); // deveria ser isso*tamanho maximo da fila
+  fila_ordenada_t *fila = (fila_ordenada_t*) malloc(sizeof(fila_ordenada_t));
   fila->primeiro = NULL;
   fila->ultimo = NULL;
   fila->n_elementos = 0;
+  printf("\ncriandofila\n");
   pthread_mutex_init(&fila->mutex, NULL);
   return fila;
 }
@@ -56,22 +55,29 @@ void desaloca_fila (fila_ordenada_t * fila) {
 
   /// rever
 void inserir (fila_ordenada_t * fila, aviao_t * dado) {
+  printf("\nantesmutex\n");
   pthread_mutex_lock(&fila->mutex);
+  printf("\ndepoismutex\n");
   elemento_t* elemento = aloca_elemento(dado);
   if (fila->n_elementos == 0) {
     fila->primeiro = elemento;
     fila->ultimo = elemento;
-  } else if (dado->combustivel <= 10) {
+    printf("\nn==0\n");
+  } else {
+    if (dado->combustivel < 10) {
     fila->primeiro->anterior = elemento;
     elemento->proximo = fila->primeiro;
     fila->primeiro = elemento;
+    printf("\ncb<10\n");
   } else {
     fila->ultimo->proximo = elemento;
     elemento->anterior = fila->ultimo;
     fila->ultimo = elemento;
+    printf("\nelse\n");
+    }
   }
   fila->n_elementos++;
-   pthread_mutex_unlock(&fila->mutex);
+  pthread_mutex_unlock(&fila->mutex);
 }
 
 aviao_t * remover (fila_ordenada_t * fila) {

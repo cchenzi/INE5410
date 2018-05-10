@@ -26,15 +26,16 @@ aeroporto_t* iniciar_aeroporto (size_t* args, size_t n_args) {
 	sem_init(&aeroporto->sem_portoes, 0, aeroporto->n_portoes);
 	sem_init(&aeroporto->sem_pistas, 0, aeroporto->n_pistas);
 	// Filas
-	aeroporto->fila_bagagem = criar_fila();
 	aeroporto->fila_decolagem = criar_fila();
 	aeroporto->fila_pouso = criar_fila();
 	return aeroporto;
 }
 
 void aproximacao_aeroporto (aeroporto_t* aeroporto, aviao_t* aviao) {
+
+	printf("\n99999999999999\n");
 	inserir(aeroporto->fila_pouso, aviao);
-	// printar
+	printf("Avião %zu está se aproximando, com %zuL de combústivel!\n", aviao->id, aviao->combustivel);
 }
 
 void pousar_aviao (aeroporto_t* aeroporto, aviao_t* aviao) {
@@ -42,16 +43,16 @@ void pousar_aviao (aeroporto_t* aeroporto, aviao_t* aviao) {
 
 	remover(aeroporto->fila_pouso);  // remove aviao da fila de pouso
 	sleep(aeroporto->t_pouso_decolagem);
+	printf("Avião %zu pousou!\n", aviao->id);
 
 	sem_post(&aeroporto->sem_pistas);
 	sem_wait(&aeroporto->sem_portoes);
 
-	inserir(aeroporto->fila_bagagem, aviao);  // insere aviao na fila de portao/bagagem
 	acoplar_portao(aeroporto, aviao);
 }
 
 void acoplar_portao (aeroporto_t* aeroporto, aviao_t* aviao) {
-
+	printf("Avião %zu acoplado no portão!\n", aviao->id);
 	transportar_bagagens(aeroporto, aviao);
 
 	sem_post(&aeroporto->sem_portoes);
@@ -60,16 +61,21 @@ void acoplar_portao (aeroporto_t* aeroporto, aviao_t* aviao) {
 
 void transportar_bagagens (aeroporto_t* aeroporto, aviao_t* aviao) {
 	sleep(aeroporto->t_remover_bagagens);
+	printf("Avião %zu removeu bagagens do avião!\n", aviao->id);
+
 	adicionar_bagagens_esteira(aeroporto, aviao);
-	sleep(aeroporto->t_inserir_bagagens);
+
+	sleep(aeroporto->t_inserir_bagagens); //
+	printf("Avião %zu inseriu bagagens no avião\n", aviao->id);
+	inserir(aeroporto->fila_decolagem, aviao);
+	decolar_aviao(aeroporto, aviao);
 }
 
 void adicionar_bagagens_esteira (aeroporto_t* aeroporto, aviao_t* aviao) {
 	sem_wait(&aeroporto->sem_esteiras);
 
 	sleep(aeroporto->t_bagagens_esteira);
-	remover(aeroporto->fila_bagagem);
-	inserir(aeroporto->fila_decolagem, aviao);
+	printf("Avião %zu inseriu bagagens na esteira!\n", aviao->id);
 
 	sem_post(&aeroporto->sem_esteiras);
 
@@ -77,16 +83,16 @@ void adicionar_bagagens_esteira (aeroporto_t* aeroporto, aviao_t* aviao) {
 
 void decolar_aviao (aeroporto_t* aeroporto, aviao_t* aviao) {
 	sem_wait(&aeroporto->sem_pistas);
-	/// sem_portoes?
-	remover(aeroporto->fila_decolagem);  // remove aviao da fila de decolagem
+
+	remover(aeroporto->fila_decolagem);
 	sleep(aeroporto->t_pouso_decolagem);
+	printf("Avião %zu decolou!", aviao->id);
 
 	sem_post(&aeroporto->sem_pistas);
 }
 
 int finalizar_aeroporto (aeroporto_t* aeroporto) {
 	desaloca_fila(aeroporto->fila_pouso);
-	desaloca_fila(aeroporto->fila_bagagem);
 	desaloca_fila(aeroporto->fila_decolagem);
 	sem_destroy(&(aeroporto->sem_pistas));
 	sem_destroy(&(aeroporto->sem_portoes));

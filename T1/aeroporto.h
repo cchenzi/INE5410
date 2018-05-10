@@ -20,7 +20,6 @@ typedef struct {
 	sem_t sem_portoes;
 	sem_t sem_pistas;
 	pthread_t thread;
-	fila_ordenada_t *fila_bagagem;
 	fila_ordenada_t *fila_decolagem;
 	fila_ordenada_t *fila_pouso;
 

@@ -1,8 +1,11 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
+#include<unistd.h>
 
 #include "aeroporto.h"
+#include "aviao.h"
 
 #define NOVO_AVIAO_MIN 30 // Intervalo de tempo
 #define NOVO_AVIAO_MAX 120 // Intervalo de tempo
@@ -13,6 +16,11 @@
 #define TEMPO_INSERIR_BAGAGENS 110
 #define TEMPO_BAGAGENS_ESTEIRA 200
 #define TEMPO_SIMULACAO 10000
+
+aeroporto_t* meu_aeroporto;
+void *threadAviao(void *arg);
+
+
 
 int main (int argc, char** argv) {
 
@@ -72,7 +80,7 @@ int main (int argc, char** argv) {
 		printf("./airport  NUMERO_PISTAS  NUMERO_PORTOES  MAXIMO_AVIOES_ESTEIRA  NUMERO_ESTEIRAS\n");
 		return 0;
 	}
-
+	printf("\n\n\nteste\n");
 	// Impressão com os parâmetros selecionados para simulação
 	printf("Simulação iniciada com tempo total: %lu\n", t_simulacao);
 	printf("Tempo para criação de aviões: %lu - %lu\n", t_novo_aviao_min, t_novo_aviao_max);
@@ -83,29 +91,50 @@ int main (int argc, char** argv) {
 	printf("Número de esteiras: %lu, com %lu aviões por esteira\n", n_esteiras, n_max_avioes_esteira);
 	printf("Tempo das bagagens nas esteiras: %lu\n", t_bagagens_esteira);
 
+	printf("\n\n\nteste\n");
 	// Inicialização do aeroporto
 	n_args = 8;
 	size_t args[8] = {n_pistas, n_portoes, n_esteiras,
 				n_max_avioes_esteira,
 				t_pouso_decolagem, t_remover_bagagens,
 				t_inserir_bagagens, t_bagagens_esteira};
+	printf("\n\n\nteste\n");
 
-	aeroporto_t* meu_aeroporto = iniciar_aeroporto(args, n_args);
+	meu_aeroporto = iniciar_aeroporto(args, n_args);
 
 	// Descreve aqui sua simulação usando as funções definidas no arquivo "aeroporto.h"
 	// Lembre-se de implementá-las num novo arquivo "aeroporto.c"
+	srand(time(NULL));
+	for (size_t i = 0; i < t_simulacao; i++) {
+		if (rand() % 100 > 66.6) {
+			int combustivel = (rand() % ((p_combustivel_max-p_combustivel_min)) + (p_combustivel_min));
+			size_t combustivelAviao = (size_t)(100*(double) combustivel/p_combustivel_max);
+			aviao_t* aviao = aloca_aviao(combustivelAviao, i);
+			pthread_create(&aviao->thread, NULL, threadAviao, (void *) aviao);
+			pthread_join(aviao->thread, NULL);
+			printf("\nsaaaaaaaaaaaaaaaaa\n");
 
+		}
+		sleep(1);
+	}
 
-	// ALOCAR COMBUSTÍVEL EM PORCENTAGEM!
 
 	finalizar_aeroporto(meu_aeroporto);
 	return 1;
 }
 
-
-/*
-Thread no aviao
-pouso
-ALOCAR COMBUSTÍVEL EM PORCENTAGEM!
-
-*/
+void *threadAviao(void *arg) {
+	aviao_t* aviao = (aviao_t *) arg;
+	aproximacao_aeroporto(meu_aeroporto, aviao);
+	printf("\n888888888888888888888888\n");
+	while(meu_aeroporto->fila_pouso->primeiro->dado->id != aviao->id){  // checa se é o primeiro da fila
+		sleep(1);
+	}
+	printf("Avião %zu é o primeiro da fila de pouso!\n", aviao->id);
+	pousar_aviao(meu_aeroporto, aviao);
+	while(meu_aeroporto->fila_decolagem->primeiro->dado->id != aviao->id){  // checa se é o primeiro da fila
+		sleep(1);
+	}
+	printf("Avião %zu é o primeiro da fila de decolagem!\n", aviao->id);
+	decolar_aviao(meu_aeroporto, aviao);
+}
