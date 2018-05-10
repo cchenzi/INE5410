@@ -11,6 +11,7 @@ typedef struct {
   pthread_t thread; // Uso dos recursos pelo avião é monitorado pela thread
   size_t combustivel; // Indica prioridade do avião para pousar
   size_t id; // Identificador do avião: 0, 1, 2, ...
+  int status;
 } aviao_t;
 
 // Estas funcoes devem cuidar da alocacao dinâmica de memória

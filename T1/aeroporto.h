@@ -20,8 +20,7 @@ typedef struct {
 	sem_t sem_portoes;
 	sem_t sem_pistas;
 	pthread_t thread;
-	fila_ordenada_t *fila_decolagem;
-	fila_ordenada_t *fila_pouso;
+	fila_ordenada_t *fila_pistas;
 
 	// Adicionar aqui outros atributos que você achar necessários.
 	// Exemplo: esteiras, portões, etc...
@@ -34,6 +33,8 @@ typedef struct {
  * aos atributos da struct aeroporto
  **/
 aeroporto_t* iniciar_aeroporto (size_t* args, size_t n_args);
+
+void tratar_fila(aeroporto_t* aeroporto);
 
 /**
  * Esta função deve ser chamada quando um novo avião se aproxima

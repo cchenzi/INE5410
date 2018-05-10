@@ -55,29 +55,37 @@ void desaloca_fila (fila_ordenada_t * fila) {
 
   /// rever
 void inserir (fila_ordenada_t * fila, aviao_t * dado) {
-  printf("\nantesmutex\n");
   pthread_mutex_lock(&fila->mutex);
-  printf("\ndepoismutex\n");
   elemento_t* elemento = aloca_elemento(dado);
   if (fila->n_elementos == 0) {
     fila->primeiro = elemento;
     fila->ultimo = elemento;
-    printf("\nn==0\n");
   } else {
     if (dado->combustivel < 10) {
     fila->primeiro->anterior = elemento;
     elemento->proximo = fila->primeiro;
     fila->primeiro = elemento;
-    printf("\ncb<10\n");
   } else {
-    fila->ultimo->proximo = elemento;
-    elemento->anterior = fila->ultimo;
-    fila->ultimo = elemento;
-    printf("\nelse\n");
+    if (dado->id < fila->ultimo->dado->id) {
+      elemento_t* a = fila->primeiro;
+      while (a->dado->combustivel < 10) {
+        a = a->proximo;
+        printf("1111\n");
+      }
+      elemento->proximo = a->proximo;
+      elemento->anterior = a;
+      a->proximo->anterior = elemento;
+      a->proximo = elemento;
+    } else {
+      fila->ultimo->proximo = elemento;
+      elemento->anterior = fila->ultimo;
+      fila->ultimo = elemento;
+      }
     }
   }
   fila->n_elementos++;
   pthread_mutex_unlock(&fila->mutex);
+  //printf("oi\n");
 }
 
 aviao_t * remover (fila_ordenada_t * fila) {
@@ -86,6 +94,14 @@ aviao_t * remover (fila_ordenada_t * fila) {
     //printf("Impossível!"); // era para ser uma exceção
     pthread_mutex_unlock(&fila->mutex);
     return NULL;
+  }
+  if (fila->n_elementos == 1){
+    aviao_t *dado = fila->primeiro->dado;
+    free(fila->primeiro);
+    fila->primeiro = NULL;
+    fila->n_elementos--;
+    pthread_mutex_unlock(&fila->mutex);
+    return dado;
   }
   aviao_t *dado = fila->primeiro->dado;
   elemento_t* novo_primeiro = fila->primeiro->proximo;  // receberá o segundo elemento(primeiro+1)
